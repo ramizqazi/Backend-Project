@@ -1,1 +1,1 @@
-export const DB_NAME = 'chai-banckend'
+export const DB_NAME = 'test'
