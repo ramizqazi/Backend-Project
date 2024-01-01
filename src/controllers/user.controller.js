@@ -11,6 +11,12 @@ const cookieOptions = {
   secure: true
 };
 
+const getUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "User get successfully"));
+});
+
 const registerUser = asyncHandler(async (req, res) => {
   // get user details from frontend
   // validation - not empty
@@ -151,4 +157,73 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken }
+const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user?._id);
+
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, 'Invalid old password');
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password Changed Successfully"));
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+  const { fullName, email, username } = req.body;
+
+  const user = req.user;
+
+  const updatedInfo = {};
+
+  if (fullName !== user?.fullName) {
+    updatedInfo.fullName = fullName
+  }
+  if (email !== user?.email) {
+    updatedInfo.email = email
+  }
+  if (username !== user?.username) {
+    updatedInfo.username = username
+  }
+
+  const avatarLocalPath = req.files?.avatar?.length > 0 ? req.files?.avatar[0]?.path : undefined;
+  console.log(avatarLocalPath)
+  if (avatarLocalPath) {
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if (avatar.url) {
+      updatedInfo.avatar = avatar.url;
+    }
+  }
+
+  const coverImageLocalPath = req.files?.coverImage?.length > 0 ? req.files?.coverImage[0]?.path : undefined;
+  if (coverImageLocalPath) {
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+    if (coverImage.url) {
+      updatedInfo.coverImage = coverImage.url;
+    }
+  }
+
+
+  const updatedUser = await User.findByIdAndUpdate(
+    user?._id,
+    {
+      $set: updatedInfo,
+    },
+    { new: true }
+  ).select('-password');
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "User updated Successfully"));
+});
+
+export { getUser, registerUser, loginUser, logoutUser, refreshAccessToken, changePassword, updateUser }
