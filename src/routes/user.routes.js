@@ -10,6 +10,7 @@ import {
   refreshAccessToken,
   updateUser,
   getUserChannelProfile,
+  getWatchHistory,
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -43,6 +44,8 @@ router.route("/update").put(verifyJWT, upload.fields([
 ]), updateUser);
 router.route("/change-password").put(verifyJWT, changePassword);
 
-router.route("/get-channel").get(verifyJWT, getUserChannelProfile);
+router.route("/channel/:username").get(verifyJWT, getUserChannelProfile);
+
+router.route("/history").get(verifyJWT, getWatchHistory);
 
 export default router;
