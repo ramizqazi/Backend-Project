@@ -9,7 +9,6 @@ export const generateAccessAndRefereshTokens = async (userId) => {
 
     user.refreshToken = refreshToken
     await user.save({ validateBeforeSave: false })
-    console.log(accessToken, refreshToken)
 
     return { accessToken, refreshToken }
   } catch (error) {
