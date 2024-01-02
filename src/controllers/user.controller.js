@@ -3,7 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { User } from '../models/user.model.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { destroyOnCloudinary, uploadOnCloudinary } from '../utils/cloudinary.js';
 import { generateAccessAndRefereshTokens } from '../utils/functions.js';
 import mongoose from 'mongoose';
 
@@ -60,7 +60,13 @@ const registerUser = asyncHandler(async (req, res) => {
     username: username.toLowerCase(),
   });
 
-  return res.status(201).json(new ApiResponse(200, user))
+  const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
+
+  return res.status(201).json(new ApiResponse(200, {
+    user,
+    accessToken,
+    refreshToken,
+  }))
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -195,8 +201,8 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar?.length > 0 ? req.files?.avatar[0]?.path : undefined;
-  console.log(avatarLocalPath)
   if (avatarLocalPath) {
+    await destroyOnCloudinary(user?.avatar);
     const avatar = await uploadOnCloudinary(avatarLocalPath);
 
     if (avatar.url) {
@@ -206,6 +212,7 @@ const updateUser = asyncHandler(async (req, res) => {
 
   const coverImageLocalPath = req.files?.coverImage?.length > 0 ? req.files?.coverImage[0]?.path : undefined;
   if (coverImageLocalPath) {
+    await destroyOnCloudinary(user?.coverImage);
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
     if (coverImage.url) {
@@ -220,7 +227,7 @@ const updateUser = asyncHandler(async (req, res) => {
       $set: updatedInfo,
     },
     { new: true }
-  ).select('-password');
+  ).select('-password -refreshToken');
 
   return res
     .status(200)

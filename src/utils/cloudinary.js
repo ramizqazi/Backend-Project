@@ -29,4 +29,21 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-export { uploadOnCloudinary };
+const destroyOnCloudinary = async (url) => {
+  try {
+    if (!url) return null;
+    const regex = /\/v(\d+)\/(\w+)\.\w+$/;
+    var match = url.match(regex);
+    var id = match[2];
+
+    console.log(id)
+    // remove file from cloudinary
+    const response = await cloudinary.uploader.destroy(id, { resource_type: 'image' });
+    return response;
+  } catch (error) {
+    console.log(error)
+    throw new ApiError(500, 'File Upload Error');
+  }
+};
+
+export { uploadOnCloudinary, destroyOnCloudinary };
